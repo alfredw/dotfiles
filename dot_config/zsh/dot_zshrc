@@ -4,6 +4,7 @@ for f in path options completions plugins aliases functions ai keybinds; do
   [[ -f "$ZDOTDIR/$f.zsh" ]] && source "$ZDOTDIR/$f.zsh"
 done
 
+eval "$(mise activate zsh)"
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
 

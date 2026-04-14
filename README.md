@@ -11,6 +11,7 @@ Personal macOS dotfiles managed by [chezmoi](https://www.chezmoi.io/).
 - **Editor**: [Neovim](https://neovim.io/) 0.12 + [LazyVim](https://www.lazyvim.org/) — Catppuccin Mocha
 - **Font**: FiraCode Nerd Font
 - **CLI**: eza, bat, ripgrep, fd, fzf, zoxide, atuin, git-delta, lazygit, tree-sitter-cli
+- **Runtimes**: [mise](https://mise.jdx.dev/) — polyglot version manager (Node, Python, etc.) with per-project `.mise.toml`
 
 ## Bootstrap a new machine
 
@@ -24,7 +25,7 @@ git config --global user.email "you@example.com"
 
 # 3. Install tooling
 brew install chezmoi starship fzf zoxide atuin eza bat ripgrep fd git-delta zsh-completions \
-  neovim lazygit tree-sitter-cli
+  neovim lazygit tree-sitter-cli mise
 brew install --cask font-fira-code-nerd-font ghostty
 
 # 3a. Verify Command Line Tools (needed by Treesitter to compile parsers)
@@ -51,6 +52,7 @@ dot_config/zsh/
   functions.zsh                 mkcd, extract
   ai.zsh                        Claude Code aliases (sources ai.local.zsh)
   keybinds.zsh                  bindkey
+dot_config/mise/config.toml     global runtime versions (Node LTS)
 dot_config/starship.toml        prompt config
 dot_config/ghostty/config       terminal config
 dot_config/nvim/                Neovim 0.12 + LazyVim
@@ -84,6 +86,10 @@ After `chezmoi apply` deploys the nvim config, the very first `nvim` launch will
 2. Install all 41 plugins from `lazy-lock.json` (~1–2 min)
 3. Mason auto-installs LSP servers, formatters, linters, DAP adapters for Python/TS/Rust (~2–3 min, watch the bottom-right progress UI)
 4. Compile Treesitter parsers using the system `tree-sitter` CLI
+
+### Runtime versions (mise)
+
+`mise` is activated in `.zshrc` via `eval "$(mise activate zsh)"`. Global defaults live in `~/.config/mise/config.toml` (Node LTS). Per-project overrides: drop a `.mise.toml` (or `.tool-versions`) at the project root and `mise install` to pin language versions. Replaces `nvm`/`pyenv`/`rbenv` in one tool.
 
 ### Tree-sitter CLI
 
