@@ -1,0 +1,14 @@
+source "${ZINIT_HOME}/zinit.zsh"
+
+for f in path options completions plugins aliases functions ai keybinds; do
+  [[ -f "$ZDOTDIR/$f.zsh" ]] && source "$ZDOTDIR/$f.zsh"
+done
+
+eval "$(starship init zsh)"
+eval "$(zoxide init zsh)"
+
+FZF_SHELL="/opt/homebrew/opt/fzf/shell"
+[[ -f "$FZF_SHELL/key-bindings.zsh" ]] && source "$FZF_SHELL/key-bindings.zsh"
+[[ -f "$FZF_SHELL/completion.zsh" ]]  && source "$FZF_SHELL/completion.zsh"
+
+eval "$(atuin init zsh --disable-up-arrow)"
