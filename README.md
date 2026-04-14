@@ -8,8 +8,9 @@ Personal macOS dotfiles managed by [chezmoi](https://www.chezmoi.io/).
 - **Plugin manager**: [zinit](https://github.com/zdharma-continuum/zinit) with turbo mode
 - **Prompt**: [starship](https://starship.rs/) — Catppuccin Mocha palette
 - **Terminal**: [Ghostty](https://ghostty.org/) — Catppuccin Mocha theme
+- **Editor**: [Neovim](https://neovim.io/) 0.12 + [LazyVim](https://www.lazyvim.org/) — Catppuccin Mocha
 - **Font**: FiraCode Nerd Font
-- **CLI**: eza, bat, ripgrep, fd, fzf, zoxide, atuin, git-delta
+- **CLI**: eza, bat, ripgrep, fd, fzf, zoxide, atuin, git-delta, lazygit, tree-sitter-cli
 
 ## Bootstrap a new machine
 
@@ -22,8 +23,12 @@ git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 
 # 3. Install tooling
-brew install chezmoi starship fzf zoxide atuin eza bat ripgrep fd git-delta zsh-completions
+brew install chezmoi starship fzf zoxide atuin eza bat ripgrep fd git-delta zsh-completions \
+  neovim lazygit tree-sitter-cli
 brew install --cask font-fira-code-nerd-font ghostty
+
+# 3a. Verify Command Line Tools (needed by Treesitter to compile parsers)
+xcode-select -p || xcode-select --install
 
 # 4. Deploy dotfiles
 chezmoi init --apply git@github-personal:alfredw/dotfiles.git
@@ -48,6 +53,16 @@ dot_config/zsh/
   keybinds.zsh                  bindkey
 dot_config/starship.toml        prompt config
 dot_config/ghostty/config       terminal config
+dot_config/nvim/                Neovim 0.12 + LazyVim
+  init.lua                      bootstraps lua/config/lazy
+  lua/config/lazy.lua           lazy.nvim + LazyVim core + lang extras
+  lua/config/{options,keymaps,autocmds}.lua
+                                user override hooks (LazyVim auto-sources)
+  lua/plugins/colorscheme.lua   Catppuccin Mocha + LazyVim default
+  lua/plugins/example-overrides.lua
+                                placeholder for future tweaks
+  lazy-lock.json                committed plugin lockfile
+  stylua.toml                   lua formatter config
 run_once_before_install-zinit.sh.tmpl
                                 clones zinit on first apply
 ```
@@ -59,3 +74,17 @@ run_once_before_install-zinit.sh.tmpl
 ```sh
 export ANTHROPIC_API_KEY="sk-ant-..."
 ```
+
+## Notes
+
+### Neovim first launch
+
+After `chezmoi apply` deploys the nvim config, the very first `nvim` launch will:
+1. Bootstrap `lazy.nvim` (clone into `~/.local/share/nvim/lazy/`)
+2. Install all 41 plugins from `lazy-lock.json` (~1–2 min)
+3. Mason auto-installs LSP servers, formatters, linters, DAP adapters for Python/TS/Rust (~2–3 min, watch the bottom-right progress UI)
+4. Compile Treesitter parsers using the system `tree-sitter` CLI
+
+### Tree-sitter CLI
+
+The new `nvim-treesitter` `main` branch (post-rewrite, April 2026) **requires** the system `tree-sitter` CLI to compile parsers locally. We install it via `brew install tree-sitter-cli` rather than letting Mason manage it — cleaner dependency model, available system-wide, single source of truth. **Do not** install Mason's `tree-sitter-cli` package — it duplicates and shadows the system binary.
