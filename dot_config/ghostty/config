@@ -1,4 +1,51 @@
+# Appearance
 font-family = FiraCode Nerd Font
 font-size = 14
-theme = catppuccin-mocha
-shell-integration = zsh
+font-thicken = true
+adjust-cell-height = 1
+theme = Catppuccin Mocha
+background-opacity = 0.95
+background-blur-radius = 20
+window-padding-x = 10
+window-padding-y = 8
+window-padding-balance = true
+window-colorspace = display-p3
+cursor-style = bar
+cursor-color = cell-foreground
+cursor-invert-fg-bg = true
+
+# macOS
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+confirm-close-surface = false
+
+# Shell / clipboard / scrollback
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+copy-on-select = clipboard
+clipboard-paste-protection = true
+scrollback-limit = 10000000
+mouse-hide-while-typing = true
+
+# Create splits
+keybind = super+shift+h=new_split:left
+keybind = super+shift+j=new_split:down
+keybind = super+shift+k=new_split:up
+keybind = super+shift+l=new_split:right
+
+# Move between splits
+keybind = super+h=goto_split:left
+keybind = super+j=goto_split:bottom
+keybind = super+k=goto_split:top
+keybind = super+l=goto_split:right
+
+# Resize splits
+keybind = super+ctrl+h=resize_split:left,10
+keybind = super+ctrl+j=resize_split:down,10
+keybind = super+ctrl+k=resize_split:up,10
+keybind = super+ctrl+l=resize_split:right,10
+
+# Misc
+keybind = super+shift+e=equalize_splits
+keybind = super+shift+f=toggle_split_zoom
+keybind = super+shift+comma=reload_config
