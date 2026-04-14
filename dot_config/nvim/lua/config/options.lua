@@ -1,0 +1,2 @@
+-- LazyVim's defaults load first. Put vim.opt overrides below.
+-- Example: vim.opt.relativenumber = false

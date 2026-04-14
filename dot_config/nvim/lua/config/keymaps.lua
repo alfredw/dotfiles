@@ -1,0 +1,2 @@
+-- LazyVim's keymaps load first. Put user overrides below.
+-- Leader is <Space>. Press <Space> and wait to browse via which-key.
