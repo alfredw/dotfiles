@@ -3,6 +3,7 @@ path=(
   "$HOME/.local/bin"
   "/opt/homebrew/bin"
   "/opt/homebrew/sbin"
+  "/opt/homebrew/share/google-cloud-sdk/bin"
   $path
 )
 export PATH

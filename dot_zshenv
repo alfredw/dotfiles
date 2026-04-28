@@ -9,3 +9,7 @@ export ZINIT_HOME="$XDG_DATA_HOME/zinit/zinit.git"
 
 typeset -U path PATH
 path=("$HOME/.local/bin" "/opt/homebrew/bin" $path)
+
+# Let gcloud reuse the system Python's site-packages (faster startup).
+# https://cloud.google.com/sdk/docs/configuration#cloudsdk_python_sitepackages
+export CLOUDSDK_PYTHON_SITEPACKAGES=1
