@@ -1,0 +1,15 @@
+[tools]
+bun = "1.3.12"
+node = "22"
+{{ if eq .chezmoi.hostname "nerv" -}}
+# nerv-only: mugen has no java or python projects.
+java = "21"
+python = "3.11"
+{{ end }}
+[settings]
+# Read .nvmrc / .node-version, and .java-version (which does hold a version).
+#
+# Deliberately NOT python: nerv's .python-version files hold pyenv-virtualenv
+# *env names* rather than versions — "llm-services", and one pointing into a
+# conda env — so mise would try to parse them as versions and fail.
+idiomatic_version_file_enable_tools = ["node", "java"]

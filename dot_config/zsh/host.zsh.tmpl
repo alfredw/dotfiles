@@ -3,15 +3,17 @@
 
 {{ if eq .chezmoi.hostname "nerv" -}}
 # ── nerv ─────────────────────────────────────────────────────────────────────
-# Runtime managers that predate the move to mise. mise owns node and bun (it
-# reads .nvmrc via idiomatic_version_file_enable_tools); pyenv and jenv still
-# own python and java until those are migrated.
+# mise owns node, bun and java (reading .nvmrc and .java-version). fnm and jenv
+# are gone. pyenv stays for now — not for interpreters, but because two work
+# projects rely on pyenv-virtualenv auto-activation, which mise has no
+# equivalent for: their .python-version files name an *env* rather than a
+# version ("llm-services", and one pointing into a conda env).
 #
-# Deliberately NOT initialising fnm here: it and `mise activate` both hook cd
-# to rewrite the node PATH, and running both makes which node you get depend on
-# load order. mise is the one we're keeping.
+# fnm is deliberately not initialised: it and `mise activate` both hook cd to
+# rewrite node's PATH, so running both makes the version you get depend on load
+# order.
 
-# pyenv — python interpreters + the 8 named virtualenvs
+# pyenv — the 7 named virtualenvs and their auto-activation
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && path=("$PYENV_ROOT/bin" $path)
 if (( $+commands[pyenv] )); then
@@ -19,9 +21,9 @@ if (( $+commands[pyenv] )); then
   eval "$(pyenv virtualenv-init -)"
 fi
 
-# jenv — JDK 17 / 21
-path=("$HOME/.jenv/bin" $path)
-(( $+commands[jenv] )) && eval "$(jenv init -)"
+# jenv is gone: mise owns java now (and exports JAVA_HOME, which jenv needed a
+# plugin for). The brew JDKs are left installed but unmanaged; nothing depends
+# on them, so they can be removed whenever.
 
 # pnpm — the PAI monorepo depends on it
 export PNPM_HOME="$HOME/Library/pnpm"
