@@ -1,3 +1,30 @@
 README.md
 .git
-dot_config/zsh/ai.local.zsh
+
+# ── Secrets: never tracked, never applied ────────────────────────────────────
+# Each has a committed .example template alongside it.
+.config/zsh/ai.local.zsh
+.config/kzo-pool/env
+.config/kzo-pool/env.claude
+
+# ── Machine-local state ──────────────────────────────────────────────────────
+# gh keeps its OAuth token in the macOS keyring; hosts.yml is per-account state.
+.config/gh/hosts.yml
+# k9s writes per-cluster state, benchmarks and screen dumps.
+.config/k9s/clusters/**
+.config/k9s/benchmarks/**
+.config/k9s/screen-dumps/**
+# karabiner rotates dated backups.
+.config/karabiner/automatic_backups/**
+# herdr: only config.toml is shared; logs, sockets and session state are local.
+.config/herdr/herdr*.log
+.config/herdr/*.sock
+.config/herdr/session.json
+.config/herdr/release-notes.json
+.config/herdr/.plugins.lock
+
+# ── Host-scoped ──────────────────────────────────────────────────────────────
+# kzo-pool slots only run on nerv.
+{{ if ne .chezmoi.hostname "nerv" }}
+.config/kzo-pool/**
+{{ end }}

@@ -1,0 +1,232 @@
+# herdr — terminal workspace manager for AI coding agents
+#
+# Managed in ~/dotfiles (GNU Stow package: herdr).
+# Reference:  https://herdr.dev/docs/configuration/
+# Annotated defaults:  herdr --default-config
+# Apply edits live:    herdr server reload-config   (or prefix+shift+r)
+#
+# Written against herdr 0.8.0 (protocol 19).
+
+# Onboarding already completed; don't show the first-run notification setup.
+onboarding = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Theme
+# ─────────────────────────────────────────────────────────────────────────────
+[theme]
+# Matches Ghostty's `theme = Catppuccin Mocha` (~/.config/ghostty/config).
+name = "catppuccin"
+
+# Ghostty is pinned to Mocha (dark), so there's no host appearance to follow.
+# Set true (and drop the pin in Ghostty) to switch with macOS light/dark.
+auto_switch = false
+# dark_name = "catppuccin"
+# light_name = "catppuccin-latte"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Terminal / pane shells
+# ─────────────────────────────────────────────────────────────────────────────
+[terminal]
+# Empty => $SHELL (zsh), then /bin/sh.
+default_shell = ""
+
+# Login shells so prezto's .zprofile and .zlogin run. That matters here:
+# PATH for pyenv, pnpm, jenv, fnm and the gcloud SDK is assembled there.
+shell_mode = "login"
+
+# New panes/tabs/workspaces inherit the cwd of whatever spawned them.
+new_cwd = "follow"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Updates
+# ─────────────────────────────────────────────────────────────────────────────
+[update]
+# Installed via Homebrew, so upgrades go through `brew upgrade herdr`.
+# Background checks stay on to surface that a new version exists.
+channel = "stable"
+version_check = true
+manifest_check = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Git worktrees created from the sidebar (prefix+shift+g)
+# ─────────────────────────────────────────────────────────────────────────────
+[worktrees]
+# Sits alongside ~/dev/{personal,work,tmp}. Deliberately NOT under ~/kzo-pool,
+# so herdr's worktrees never collide with the kzo slot machinery.
+# Layout: ~/dev/worktrees/<repo>/<branch-slug>
+directory = "~/dev/worktrees"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Keybindings
+# ─────────────────────────────────────────────────────────────────────────────
+[keys]
+# ctrl+a, matching the tmux prefix (`set -g prefix C-a`) — herdr replaces tmux
+# here, so there's no nested-prefix contention.
+#
+# Safe for this shell: zpreztorc sets `editor key-bindings 'vi'`, so ctrl+a is
+# not bound to beginning-of-line the way it would be under emacs bindings.
+prefix = "ctrl+a"
+
+# prefix+a => last pane, mirroring tmux's C-a C-a "bounce between two things".
+last_pane = "prefix+a"
+
+# Movement scheme:
+#   prefix + hjkl        -> move between PANES        (herdr defaults)
+#   prefix + shift+jk    -> move between WORKSPACES   (vertical, like the sidebar)
+#   prefix + shift+hl    -> move between AGENTS       (horizontal)
+# All four shift chords are unbound by default.
+next_workspace = "prefix+shift+j"
+previous_workspace = "prefix+shift+k"
+next_agent = "prefix+shift+l"
+previous_agent = "prefix+shift+h"
+
+# Indexed jumps. switch_tab is a default; the other two ship unbound.
+switch_tab = "prefix+1..9"
+switch_workspace = "prefix+shift+1..9"
+focus_agent = "prefix+alt+1..9"
+
+# prefix+e opens the pane's scrollback in $EDITOR (nvim) — very handy for
+# scraping a long agent transcript.
+edit_scrollback = "prefix+e"
+
+# Popup for lazygit — modal, no layout change, closes on exit.
+[[keys.command]]
+key = "prefix+alt+g"
+type = "popup"
+command = "lazygit"
+description = "lazygit in a popup"
+width = "90%"
+height = "90%"
+
+# Popup for k9s.
+[[keys.command]]
+key = "prefix+alt+k"
+type = "popup"
+command = "k9s"
+description = "k9s in a popup"
+width = "95%"
+height = "90%"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UI
+# ─────────────────────────────────────────────────────────────────────────────
+[ui]
+sidebar_width = 26
+sidebar_min_width = 18
+sidebar_max_width = 36
+sidebar_collapsed_mode = "compact"
+
+# Order the agent panel as an attention queue rather than grouped by space —
+# with several agents running, "who needs me now" beats "where does it live".
+# Switch back to "spaces" if you'd rather have stable positions.
+agent_panel_sort = "priority"
+
+# Label split borders with the detected agent when a pane has no manual name.
+show_agent_labels_on_pane_borders = true
+
+# One tab means the tab row is noise.
+hide_tab_bar_when_single_tab = true
+
+# Catppuccin Mocha blue.
+accent = "#89b4fa"
+
+pane_borders = true
+pane_gaps = true
+
+# Matches Ghostty's `copy-on-select = clipboard`.
+copy_on_select = true
+
+# Leave mouse capture on for herdr's mouse UI. Note the trade-off: cmd-click to
+# open a URL is handled by Ghostty and still works, but if you want the outer
+# terminal to own ordinary clicks entirely, set this false.
+mouse_capture = true
+mouse_scroll_lines = 3
+
+confirm_close = true
+prompt_new_tab_name = true
+prompt_new_workspace_name = false
+
+# Sidebar rows ------------------------------------------------------------
+[ui.sidebar.spaces]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace"],
+  ["branch", "git_status"],
+]
+
+[ui.sidebar.agents]
+row_gap = 0
+rows = [
+  ["state_icon", "workspace", "tab"],
+  ["agent"],
+]
+
+# Claude Code reports a useful terminal title, so give it an extra line.
+[ui.sidebar.agents.rows_by_agent]
+claude = [
+  ["state_icon", "workspace", "tab"],
+  ["terminal_title_stripped"],
+  ["agent"],
+]
+
+# Notifications ----------------------------------------------------------
+[ui.toast]
+# "system" routes to macOS notifications, so a backgrounded agent finishing or
+# asking a question reaches you outside the terminal. terminal-notifier is
+# installed, which is what lets clicking the notification activate the app.
+# Use "herdr" for in-app toasts only, or "terminal" when working over SSH.
+delivery = "system"
+delay_seconds = 1
+
+[ui.toast.herdr]
+position = "bottom-right"
+
+[ui.toast.clipboard]
+enabled = true
+position = "bottom-center"
+
+[ui.sound]
+enabled = true
+
+[ui.sound.agents]
+# droid is muted by default upstream; kept explicit for clarity.
+droid = "off"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Session persistence
+# ─────────────────────────────────────────────────────────────────────────────
+[session]
+# Restores agent panes into their native conversations after a server restart
+# (e.g. `brew services restart herdr`). This only works because the claude,
+# codex and opencode integrations are installed — check with:
+#   herdr integration status
+resume_agents_on_restore = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Remote (herdr --remote <ssh-target>)
+# ─────────────────────────────────────────────────────────────────────────────
+[remote]
+# Let herdr layer keepalive + connection reuse on top of ~/.ssh/config.
+# Values you set yourself still win.
+manage_ssh_config = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Experimental
+# ─────────────────────────────────────────────────────────────────────────────
+[experimental]
+# herdr replaces tmux here; nesting herdr in herdr stays off.
+allow_nested = false
+
+# Ghostty does speak the Kitty graphics protocol, so this is worth trying if
+# you want inline images. Left off because it's experimental.
+kitty_graphics = false
+
+pane_history = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Advanced
+# ─────────────────────────────────────────────────────────────────────────────
+[advanced]
+# 10 MB per pane, matching Ghostty's default. Agent panes are verbose; raise it
+# if you scroll off useful output, at the cost of memory per pane.
+scrollback_limit_bytes = 10000000

@@ -1,0 +1,34 @@
+# Per-machine shell config. Sourced from .zshrc after the shared modules, so it
+# can override them. Keyed on hostname by chezmoi — see dot_config/zsh/host.zsh.tmpl.
+
+{{ if eq .chezmoi.hostname "nerv" -}}
+# ── nerv ─────────────────────────────────────────────────────────────────────
+# Runtime managers that predate the move to mise. mise owns node and bun (it
+# reads .nvmrc via idiomatic_version_file_enable_tools); pyenv and jenv still
+# own python and java until those are migrated.
+#
+# Deliberately NOT initialising fnm here: it and `mise activate` both hook cd
+# to rewrite the node PATH, and running both makes which node you get depend on
+# load order. mise is the one we're keeping.
+
+# pyenv — python interpreters + the 8 named virtualenvs
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && path=("$PYENV_ROOT/bin" $path)
+if (( $+commands[pyenv] )); then
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
+fi
+
+# jenv — JDK 17 / 21
+path=("$HOME/.jenv/bin" $path)
+(( $+commands[jenv] )) && eval "$(jenv init -)"
+
+# pnpm — the PAI monorepo depends on it
+export PNPM_HOME="$HOME/Library/pnpm"
+path=("$PNPM_HOME" $path)
+
+export PATH
+{{ else if eq .chezmoi.hostname "mugen" -}}
+# ── mugen ────────────────────────────────────────────────────────────────────
+# Nothing machine-specific: mugen's setup *is* the shared baseline.
+{{ end -}}

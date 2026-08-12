@@ -1,0 +1,9 @@
+# Recommended direnv configuration for this project.
+# Copy to ~/.config/direnv/direnv.toml (or run `bootstrap` to auto-install).
+
+[global]
+# Suppress the noisy env var diff output (Nix devshells export dozens of vars)
+hide_env_diff = true
+
+# Increase the "taking too long" warning threshold (Nix evaluations can exceed 5s default)
+warn_timeout = "30s"

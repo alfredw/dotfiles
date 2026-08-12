@@ -1,0 +1,45 @@
+[user]
+	name = Alfred Wong
+	email = alfiewong@gmail.com
+
+[pull]
+	rebase = false
+
+[core]
+	editor = vim
+	pager = delta
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	line-numbers = true
+	side-by-side = true
+	syntax-theme = base16
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+	colorMoved = default
+
+{{ if eq .chezmoi.hostname "nerv" -}}
+# ── nerv ─────────────────────────────────────────────────────────────────────
+# PAI repos use trunk as the release branch, so new repos here default to it.
+[init]
+	defaultBranch = trunk
+
+[includeIf "gitdir:~/dev/work/pai/"]
+	path = ~/.config/git/identity-pai
+{{ else -}}
+# ── {{ .chezmoi.hostname }} ──────────────────────────────────────────────────
+[init]
+	defaultBranch = main
+
+[includeIf "gitdir:~/work/pai/"]
+	path = ~/.config/git/identity-pai
+
+[includeIf "gitdir:~/work/personal/"]
+	path = ~/.config/git/identity-personal
+{{ end -}}

@@ -1,0 +1,6 @@
+# Copy to ~/.config/zsh/ai.local.zsh — sourced by ai.zsh if present.
+# Never tracked: listed in .chezmoiignore.
+#
+# Machine-local AI tooling secrets and overrides, e.g.
+#   export ANTHROPIC_API_KEY=
+#   export OPENAI_API_KEY=
