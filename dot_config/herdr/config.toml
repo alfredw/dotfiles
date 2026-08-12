@@ -60,14 +60,16 @@ directory = "~/dev/worktrees"
 # Keybindings
 # ─────────────────────────────────────────────────────────────────────────────
 [keys]
-# ctrl+a, matching the tmux prefix (`set -g prefix C-a`) — herdr replaces tmux
-# here, so there's no nested-prefix contention.
+# herdr's default. ctrl+a was tried first to match the old tmux prefix, but the
+# shared keybinds.zsh sets `bindkey -e`, and under emacs bindings ctrl+a is
+# beginning-of-line — herdr would swallow it inside every pane.
 #
-# Safe for this shell: zpreztorc sets `editor key-bindings 'vi'`, so ctrl+a is
-# not bound to beginning-of-line the way it would be under emacs bindings.
-prefix = "ctrl+a"
+# ctrl+b is not free either (it's backward-char), but it's the binding every
+# herdr user lives with by default, and the arrow keys cover it.
+prefix = "ctrl+b"
 
-# prefix+a => last pane, mirroring tmux's C-a C-a "bounce between two things".
+# Bounce between the two panes you're actually working in. 'a' is unclaimed by
+# any default; prefix+b would collide with toggle_sidebar.
 last_pane = "prefix+a"
 
 # Movement scheme:
