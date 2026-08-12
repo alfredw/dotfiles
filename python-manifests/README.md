@@ -44,14 +44,45 @@ to pip.
 ## Recreating an env as a plain venv
 
 mise manages interpreters but not pyenv-virtualenv, so the named envs become
-ordinary venvs:
+ordinary venvs under `~/.venvs/`:
 
 ```sh
-mise use -g python@3.11
-python -m venv ~/.venvs/<name>
+"$(mise which python)" -m venv ~/.venvs/<name>
+~/.venvs/<name>/bin/python -m pip install --upgrade pip
+~/.venvs/<name>/bin/python -m pip install -r python-manifests/pyenv-<name>.txt
 source ~/.venvs/<name>/bin/activate
-pip install -r python-manifests/pyenv-<name>.txt
 ```
+
+**Validated** on `llm-services` (12 Aug 2026): recreated against mise's Python
+3.11.15 from a manifest captured on 3.11.9, and `pip freeze` came back
+byte-identical to the manifest — every pin resolved. Poetry 1.8.5, black and
+coverage all ran, and `poetry check` in the real project returned "All set!".
+Roughly 100 MB on disk. The remaining six are left to recreate on demand; the
+heavy ones (`gpts`, `librarian`, `pai-llm-services` — numpy, scipy, pandas,
+pyarrow, grpcio) will be considerably larger.
+
+Note `llm-services` is Poetry's *tooling* env — poetry, black, coverage, keyring
+— not an application runtime. Poetry manages the app's own dependencies from
+`pyproject.toml` separately.
+
+### Why pyenv is still installed
+
+Two projects rely on pyenv-virtualenv **auto-activation**, which mise has no
+equivalent for — their `.python-version` files name an env rather than a version:
+
+| Project | `.python-version` contains |
+|---|---|
+| `~/dev/work/pai/llm-services` | `llm-services` (a pyenv virtualenv) |
+| `~/dev/work/sciteline/gpt-services` | `miniconda3-3.11-24.1.2-0/envs/gpt-sciteline` (a **conda** env) |
+
+That is also why `python` is absent from `idiomatic_version_file_enable_tools` in
+`dot_config/mise/config.toml.tmpl`: mise would try to parse those as versions.
+
+Removing pyenv needs a per-project change, not a dotfiles change — either a
+`mise.toml` using `[env] _.python.venv`, or a direnv `.envrc` (direnv is already
+installed and configured on both machines). Both mean editing a work repo, so
+it is a deliberate decision rather than part of this migration. The second
+project points into conda, which is out of scope regardless.
 
 For conda envs use `.conda.txt`, **not** `.pip.txt`:
 
