@@ -28,3 +28,9 @@ README.md
 {{ if ne .chezmoi.hostname "nerv" }}
 .config/kzo-pool/**
 {{ end }}
+
+# ── Records, not config ──────────────────────────────────────────────────────
+# Point-in-time Python env manifests captured before the mise migration.
+# Tracked in git for recoverability; never applied to $HOME.
+python-manifests
+python-manifests/**
