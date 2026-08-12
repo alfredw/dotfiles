@@ -2,16 +2,36 @@
 
 Personal macOS dotfiles managed by [chezmoi](https://www.chezmoi.io/).
 
+## Machines
+
+| Host | Source dir | Notes |
+|---|---|---|
+| `mugen` | `~/work/personal/dotfiles` | MacBook. Origin of this setup. |
+| `nerv` | `~/dev/personal/dotfiles` | Has no `~/work`; keeps pyenv/jenv/pnpm (see host module). |
+
+Anything that genuinely differs between machines goes through chezmoi templating
+keyed on `.chezmoi.hostname` — never a second copy of a file. Three places use it:
+
+- `dot_config/zsh/host.zsh.tmpl` — per-machine shell setup, sourced from
+  `.zshrc` after the shared modules so it can override them. Empty on mugen.
+- `dot_gitconfig.tmpl` — shared delta/merge/diff settings; `init.defaultBranch`
+  and the `includeIf` paths differ per host.
+- `.chezmoiignore` — scopes `kzo-pool` to nerv, the only machine running slots.
+
+The source dir differs per machine, so it lives in machine-local
+`~/.config/chezmoi/chezmoi.toml` rather than in this repo.
+
 ## Stack
 
-- **Shell**: zsh (no Oh My Zsh)
+- **Shell**: zsh (no Oh My Zsh), XDG-compliant via `ZDOTDIR`
 - **Plugin manager**: [zinit](https://github.com/zdharma-continuum/zinit) with turbo mode
 - **Prompt**: [starship](https://starship.rs/) — Catppuccin Mocha palette
 - **Terminal**: [Ghostty](https://ghostty.org/) — Catppuccin Mocha theme
+- **Multiplexer**: [herdr](https://herdr.dev) — agent-aware, replaces tmux
 - **Editor**: [Neovim](https://neovim.io/) 0.12 + [LazyVim](https://www.lazyvim.org/) — Catppuccin Mocha
 - **Font**: FiraCode Nerd Font
 - **CLI**: eza, bat, ripgrep, fd, fzf, zoxide, atuin, git-delta, lazygit, tree-sitter-cli
-- **Runtimes**: [mise](https://mise.jdx.dev/) — polyglot version manager (Node, Python, etc.) with per-project `.mise.toml`
+- **Runtimes**: [mise](https://mise.jdx.dev/) — Node, bun, and more, with per-project pins
 
 ## Bootstrap a new machine
 
@@ -19,78 +39,137 @@ Personal macOS dotfiles managed by [chezmoi](https://www.chezmoi.io/).
 # 1. Install Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 2. Set git identity
+# 2. Set git identity (this repo then takes over via dot_gitconfig.tmpl)
 git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 
 # 3. Install tooling
-brew install chezmoi starship fzf zoxide atuin eza bat ripgrep fd git-delta zsh-completions \
-  neovim lazygit tree-sitter-cli mise
+brew install chezmoi starship fzf zoxide atuin eza bat ripgrep fd git-delta \
+  zsh-completions neovim lazygit tree-sitter-cli mise herdr k9s jq
 brew install --cask font-fira-code-nerd-font ghostty
 
 # 3a. Verify Command Line Tools (needed by Treesitter to compile parsers)
 xcode-select -p || xcode-select --install
 
-# 4. Deploy dotfiles
-chezmoi init --apply git@github-personal:alfredw/dotfiles.git
+# 4. Point chezmoi at this machine's source dir, then deploy
+mkdir -p ~/.config/chezmoi
+printf 'sourceDir = "%s/dev/personal/dotfiles"\n' "$HOME" > ~/.config/chezmoi/chezmoi.toml
+chezmoi init --apply git@github.com:alfredw/dotfiles.git
 
-# 5. Add secrets (API keys etc) to the untracked local file
-$EDITOR ~/.config/zsh/ai.local.zsh
+# 5. Install the runtimes this machine's projects pin
+mise install
+
+# 6. herdr agent integrations — NOT tracked here (they write into agent-owned
+#    config dirs), so they are a per-machine bootstrap step.
+herdr integration install claude
+herdr integration install codex
+herdr integration install opencode
+herdr integration status        # all three should read "current"
+
+# 7. Add secrets to the untracked local files
+$EDITOR ~/.config/zsh/ai.local.zsh          # see ai.local.zsh.example
 ```
+
+Step 4 runs `run_once_before_install-zinit.sh`, which clones zinit before the
+first apply. The first interactive shell after that installs the zinit plugins
+in turbo mode — expect a burst of clone output once, then never again.
 
 ## Layout
 
 ```
-dot_zshenv                      → ~/.zshenv        (XDG, PATH seeds)
-dot_zshrc                       → ~/.zshrc         (bootstrap, sources split files)
+dot_zshenv                      → ~/.zshenv        (XDG vars, ZDOTDIR, PATH seeds)
+dot_gitconfig.tmpl              → ~/.gitconfig     (per-host: branch + includeIf)
+dot_markdownlint.json           → ~/.markdownlint.json
 dot_config/zsh/
+  dot_zshrc                     → ~/.config/zsh/.zshrc  (sources the modules below)
   path.zsh                      PATH additions
   options.zsh                   setopt, history
   completions.zsh               compinit, zstyle
   plugins.zsh                   zinit turbo block
   aliases.zsh                   eza/bat/fzf/git aliases
-  functions.zsh                 mkcd, extract
+  functions.zsh                 mkcd, extract, GKE bastion + k9s helpers
   ai.zsh                        Claude Code aliases (sources ai.local.zsh)
+  host.zsh.tmpl                 per-machine setup (see Machines)
   keybinds.zsh                  bindkey
-dot_config/mise/config.toml     global runtime versions (Node LTS)
+dot_config/git/
+  identity-pai                  work identity, pulled in by includeIf
+  identity-personal             personal identity, pulled in by includeIf
+dot_config/mise/config.toml     global runtime versions
 dot_config/starship.toml        prompt config
 dot_config/ghostty/config       terminal config
+dot_config/herdr/config.toml    multiplexer config (prefix, theme, keybinds)
+dot_config/private_k9s/         k9s config, aliases, plugins
+dot_config/private_karabiner/   karabiner-elements config
+dot_config/gh/                  gh CLI prefs (hosts.yml is ignored)
+dot_config/direnv/              direnv config
+dot_config/kzo-pool/            nerv only; config.json templated off homeDir
 dot_config/nvim/                Neovim 0.12 + LazyVim
   init.lua                      bootstraps lua/config/lazy
   lua/config/lazy.lua           lazy.nvim + LazyVim core + lang extras
   lua/config/{options,keymaps,autocmds}.lua
                                 user override hooks (LazyVim auto-sources)
   lua/plugins/colorscheme.lua   Catppuccin Mocha + LazyVim default
+  lua/plugins/markdown.lua      in-buffer markdown + mermaid rendering
   lua/plugins/example-overrides.lua
                                 placeholder for future tweaks
   lazy-lock.json                committed plugin lockfile
   stylua.toml                   lua formatter config
+python-manifests/               records, never applied — see its README
 run_once_before_install-zinit.sh.tmpl
                                 clones zinit on first apply
 ```
 
 ## Secrets
 
-`~/.config/zsh/ai.local.zsh` is gitignored and created manually per-machine. It should look like:
+Never tracked; each has a committed `.example` alongside it. All are listed in
+`.chezmoiignore`, so `chezmoi apply` will not create or overwrite them.
 
-```sh
-export ANTHROPIC_API_KEY="sk-ant-..."
-```
+| File | Holds |
+|---|---|
+| `~/.config/zsh/ai.local.zsh` | AI provider API keys |
+| `~/.config/kzo-pool/env` | `GH_TOKEN` |
+| `~/.config/kzo-pool/env.claude` | `CLAUDE_CODE_OAUTH_TOKEN` |
+
+Also deliberately untracked: `~/.config/gh/hosts.yml` (gh keeps its OAuth token
+in the macOS keyring), atuin's sync key, k9s cluster/benchmark/screen-dump
+state, karabiner's dated backups, and herdr's logs, sockets and session file.
 
 ## Notes
+
+### herdr prefix
+
+`prefix = "ctrl+a"`, inherited from the old tmux binding. Note that the shared
+`keybinds.zsh` sets emacs keybindings (`bindkey -e`), where `ctrl+a` is
+`beginning-of-line` — inside a herdr pane, herdr takes it first. Change the
+prefix in `dot_config/herdr/config.toml` if that trade is not worth it.
+
+Apply config edits without restarting: `herdr server reload-config`.
 
 ### Neovim first launch
 
 After `chezmoi apply` deploys the nvim config, the very first `nvim` launch will:
 1. Bootstrap `lazy.nvim` (clone into `~/.local/share/nvim/lazy/`)
-2. Install all 41 plugins from `lazy-lock.json` (~1–2 min)
+2. Install all plugins from `lazy-lock.json` (~1–2 min)
 3. Mason auto-installs LSP servers, formatters, linters, DAP adapters for Python/TS/Rust (~2–3 min, watch the bottom-right progress UI)
 4. Compile Treesitter parsers using the system `tree-sitter` CLI
 
 ### Runtime versions (mise)
 
-`mise` is activated in `.zshrc` via `eval "$(mise activate zsh)"`. Global defaults live in `~/.config/mise/config.toml` (Node LTS). Per-project overrides: drop a `.mise.toml` (or `.tool-versions`) at the project root and `mise install` to pin language versions. Replaces `nvm`/`pyenv`/`rbenv` in one tool.
+`mise` is activated in `.zshrc` via `eval "$(mise activate zsh)"`. Global
+defaults live in `~/.config/mise/config.toml`. Per-project overrides: a
+`mise.toml`, `.tool-versions`, or — because
+`idiomatic_version_file_enable_tools = ["node"]` is set — a plain `.nvmrc`.
+
+One trap: if a project pins a version mise hasn't installed, mise prints
+`WARN missing: node@X` and then falls through to whatever `node` is next on
+`PATH` (on nerv, Homebrew's, which `opencode` depends on). It does not fail.
+Run `mise install` after cloning a project so the pin is actually honoured.
 
 ### Tree-sitter CLI
 
-The new `nvim-treesitter` `main` branch (post-rewrite, April 2026) **requires** the system `tree-sitter` CLI to compile parsers locally. We install it via `brew install tree-sitter-cli` rather than letting Mason manage it — cleaner dependency model, available system-wide, single source of truth. **Do not** install Mason's `tree-sitter-cli` package — it duplicates and shadows the system binary.
+The new `nvim-treesitter` `main` branch (post-rewrite, April 2026) **requires**
+the system `tree-sitter` CLI to compile parsers locally. We install it via
+`brew install tree-sitter-cli` rather than letting Mason manage it — cleaner
+dependency model, available system-wide, single source of truth. **Do not**
+install Mason's `tree-sitter-cli` package — it duplicates and shadows the
+system binary.
