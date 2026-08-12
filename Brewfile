@@ -12,7 +12,10 @@
 # `brew bundle dump --force` can't overwrite this curated list with a full
 # machine dump.
 
-tap "homebrew/bundle"
+# No taps needed. `brew bundle` has been a built-in command since Homebrew
+# 4.5.0 and the homebrew/bundle tap is deprecated — declaring it here would ask
+# brew to tap something it now tells you to untap. Nerd font casks likewise no
+# longer need homebrew/cask-fonts; they live in Homebrew/homebrew-cask directly.
 
 # ── Shell ────────────────────────────────────────────────────────────────────
 brew "starship"          # prompt; config in dot_config/starship.toml
