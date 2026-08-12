@@ -21,7 +21,7 @@ return {
             return {
               "-i", "{src}", "-o", "{file}",
               "-b", "transparent", "-t", theme,
-              "-s", "6", "-w", "2400",
+              "-s", "4", "-w", "2000",
             }
           end,
         },
