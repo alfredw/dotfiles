@@ -34,3 +34,7 @@ README.md
 # Tracked in git for recoverability; never applied to $HOME.
 python-manifests
 python-manifests/**
+
+# Brewfile is a baseline manifest, not a deployed dotfile. Kept out of $HOME so
+# a stray `brew bundle dump --force` cannot overwrite the curated list.
+Brewfile
