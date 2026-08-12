@@ -145,6 +145,23 @@ prefix in `dot_config/herdr/config.toml` if that trade is not worth it.
 
 Apply config edits without restarting: `herdr server reload-config`.
 
+### If eza / bat / delta abort with "Library not loaded: libllhttp"
+
+Homebrew ABI drift, not a config problem. `eza`, `bat` and `git-delta` all link
+`libgit2`, which links `llhttp`. Installing any of them can pull a newer
+`llhttp` and relink `/opt/homebrew/opt/llhttp` to it, leaving the existing
+`libgit2` pointing at a `libllhttp.<old>.dylib` that no longer exists under that
+path. Homebrew does not rebuild dependents automatically.
+
+```sh
+brew upgrade libgit2   # rebuilt against the current llhttp
+brew cleanup           # drop the orphaned old versions
+```
+
+Worth knowing because `core.pager = delta` means this breaks `git diff` and
+`git log` too — and only in a real terminal, since git pages only to a TTY. A
+script calling git will look perfectly healthy while interactive use is broken.
+
 ### Neovim first launch
 
 After `chezmoi apply` deploys the nvim config, the very first `nvim` launch will:
