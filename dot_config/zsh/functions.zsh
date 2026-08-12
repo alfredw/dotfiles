@@ -86,3 +86,152 @@ nonproddev-kubectl() {
   HTTPS_PROXY="socks5://127.0.0.1:${NONPRODDEV_BASTION_PORT}" \
     kubectl --context "gke_${NONPRODDEV_CLUSTER_PROJECT}_${NONPRODDEV_CLUSTER_REGION}_${NONPRODDEV_CLUSTER_NAME}" "$@"
 }
+
+# --- PAI nonprodqa bastion + k9s helpers -----------------------------------
+# Port 1081 matches the socks5 proxy_url hardcoded in
+# infrastructure/environments/nonprodqa/providers.tf.
+: ${NONPRODQA_VPC_HOST_PROJECT:=vpc-host-nonprod-ra396-dg836}
+: ${NONPRODQA_BASTION_ZONE:=us-east1-b}
+: ${NONPRODQA_BASTION_PORT:=1081}
+: ${NONPRODQA_CLUSTER_PROJECT:=nonprodqa-web-platform-svc-873}
+: ${NONPRODQA_CLUSTER_NAME:=nonprodqa-private-autopilot}
+: ${NONPRODQA_CLUSTER_REGION:=us-east1}
+
+nonprodqa-tunnel() {
+  if lsof -iTCP:${NONPRODQA_BASTION_PORT} -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Tunnel already listening on :${NONPRODQA_BASTION_PORT}"
+    return 0
+  fi
+  echo "Opening IAP tunnel to nonprodqa-bastion-vm on :${NONPRODQA_BASTION_PORT}..."
+  # Detach stdin from terminal so the ssh -t pty doesn't get SIGTTIN/SIGTTOU
+  # when the process is backgrounded (otherwise it's stuck in T state and never binds).
+  nohup gcloud compute ssh nonprodqa-bastion-vm \
+    --zone "${NONPRODQA_BASTION_ZONE}" \
+    --tunnel-through-iap \
+    --project "${NONPRODQA_VPC_HOST_PROJECT}" \
+    --ssh-flag="-D ${NONPRODQA_BASTION_PORT}" \
+    --ssh-flag="-q" \
+    --ssh-flag="-N" \
+    --ssh-flag="-o ExitOnForwardFailure=yes" \
+    --ssh-flag="-o ServerAliveInterval=10" \
+    </dev/null >/tmp/nonprodqa-tunnel.log 2>&1 &
+  disown
+  echo "Tunnel PID: $! (log: /tmp/nonprodqa-tunnel.log)"
+  echo "Wait a few seconds, then verify: lsof -iTCP:${NONPRODQA_BASTION_PORT} -sTCP:LISTEN -n -P"
+}
+
+nonprodqa-tunnel-kill() {
+  local pattern="nonprodqa-bastion-vm"
+  if ! pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "No nonprodqa tunnel found"
+    return 0
+  fi
+  echo "Killing nonprodqa tunnel processes..."
+  pkill -f "$pattern"
+  sleep 1
+  if pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "Some processes survived SIGTERM — sending SIGKILL..."
+    pkill -9 -f "$pattern"
+  fi
+}
+
+nonprodqa-kubeconfig() {
+  gcloud container clusters get-credentials "${NONPRODQA_CLUSTER_NAME}" \
+    --region "${NONPRODQA_CLUSTER_REGION}" \
+    --project "${NONPRODQA_CLUSTER_PROJECT}"
+}
+
+_nonprodqa-ensure-tunnel() {
+  if ! lsof -iTCP:${NONPRODQA_BASTION_PORT} -sTCP:LISTEN -n -P >/dev/null 2>&1; then
+    echo "No tunnel listening on :${NONPRODQA_BASTION_PORT} — run 'nonprodqa-tunnel' first" >&2
+    return 1
+  fi
+}
+
+nonprodqa-k9s() {
+  _nonprodqa-ensure-tunnel || return 1
+  HTTPS_PROXY="socks5://127.0.0.1:${NONPRODQA_BASTION_PORT}" \
+    k9s --context "gke_${NONPRODQA_CLUSTER_PROJECT}_${NONPRODQA_CLUSTER_REGION}_${NONPRODQA_CLUSTER_NAME}"
+}
+
+nonprodqa-kubectl() {
+  _nonprodqa-ensure-tunnel || return 1
+  HTTPS_PROXY="socks5://127.0.0.1:${NONPRODQA_BASTION_PORT}" \
+    kubectl --context "gke_${NONPRODQA_CLUSTER_PROJECT}_${NONPRODQA_CLUSTER_REGION}_${NONPRODQA_CLUSTER_NAME}" "$@"
+}
+
+# --- PAI euprod bastion + k9s helpers --------------------------------------
+# Port 10800 matches the socks5 proxy_url hardcoded in
+# infrastructure/environments/euprod/providers.tf.
+# Values confirmed 2026-07-24 via gcloud against the live euprod env.
+# NB: euprod-web-platform-svc-899ep is the disabled legacy gcp_base placeholder;
+# the real cluster lives in ...-992b03.
+: ${EUPROD_VPC_HOST_PROJECT:=vpc-host-prod-hg867-gf641}
+: ${EUPROD_BASTION_ZONE:=europe-west2-a}
+: ${EUPROD_BASTION_PORT:=10800}
+: ${EUPROD_CLUSTER_PROJECT:=euprod-web-platform-svc-992b03}
+: ${EUPROD_CLUSTER_NAME:=euprod-private-autopilot}
+: ${EUPROD_CLUSTER_REGION:=europe-west2}
+
+euprod-tunnel() {
+  if lsof -iTCP:${EUPROD_BASTION_PORT} -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Tunnel already listening on :${EUPROD_BASTION_PORT}"
+    return 0
+  fi
+  echo "Opening IAP tunnel to euprod-bastion-vm on :${EUPROD_BASTION_PORT}..."
+  # Detach stdin from terminal so the ssh -t pty doesn't get SIGTTIN/SIGTTOU
+  # when the process is backgrounded (otherwise it's stuck in T state and never binds).
+  nohup gcloud compute ssh euprod-bastion-vm \
+    --zone "${EUPROD_BASTION_ZONE}" \
+    --tunnel-through-iap \
+    --project "${EUPROD_VPC_HOST_PROJECT}" \
+    --ssh-flag="-D ${EUPROD_BASTION_PORT}" \
+    --ssh-flag="-q" \
+    --ssh-flag="-N" \
+    --ssh-flag="-o ExitOnForwardFailure=yes" \
+    --ssh-flag="-o ServerAliveInterval=10" \
+    </dev/null >/tmp/euprod-tunnel.log 2>&1 &
+  disown
+  echo "Tunnel PID: $! (log: /tmp/euprod-tunnel.log)"
+  echo "Wait a few seconds, then verify: lsof -iTCP:${EUPROD_BASTION_PORT} -sTCP:LISTEN -n -P"
+}
+
+euprod-tunnel-kill() {
+  local pattern="euprod-bastion-vm"
+  if ! pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "No euprod tunnel found"
+    return 0
+  fi
+  echo "Killing euprod tunnel processes..."
+  pkill -f "$pattern"
+  sleep 1
+  if pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "Some processes survived SIGTERM — sending SIGKILL..."
+    pkill -9 -f "$pattern"
+  fi
+}
+
+euprod-kubeconfig() {
+  gcloud container clusters get-credentials "${EUPROD_CLUSTER_NAME}" \
+    --region "${EUPROD_CLUSTER_REGION}" \
+    --project "${EUPROD_CLUSTER_PROJECT}"
+}
+
+_euprod-ensure-tunnel() {
+  if ! lsof -iTCP:${EUPROD_BASTION_PORT} -sTCP:LISTEN -n -P >/dev/null 2>&1; then
+    echo "No tunnel listening on :${EUPROD_BASTION_PORT} — run 'euprod-tunnel' first" >&2
+    return 1
+  fi
+}
+
+euprod-k9s() {
+  _euprod-ensure-tunnel || return 1
+  HTTPS_PROXY="socks5://127.0.0.1:${EUPROD_BASTION_PORT}" \
+    k9s --context "gke_${EUPROD_CLUSTER_PROJECT}_${EUPROD_CLUSTER_REGION}_${EUPROD_CLUSTER_NAME}"
+}
+
+euprod-kubectl() {
+  _euprod-ensure-tunnel || return 1
+  HTTPS_PROXY="socks5://127.0.0.1:${EUPROD_BASTION_PORT}" \
+    kubectl --context "gke_${EUPROD_CLUSTER_PROJECT}_${EUPROD_CLUSTER_REGION}_${EUPROD_CLUSTER_NAME}" "$@"
+}
