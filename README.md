@@ -162,6 +162,32 @@ Worth knowing because `core.pager = delta` means this breaks `git diff` and
 `git log` too — and only in a real terminal, since git pages only to a TTY. A
 script calling git will look perfectly healthy while interactive use is broken.
 
+### lazy-lock.json and the silent `chezmoi apply` skip
+
+`lazy-lock.json` is the file most likely to drift, because nvim rewrites it
+whenever plugins install or update. Two things to know:
+
+**`chezmoi apply` will not overwrite a file that changed since chezmoi last
+wrote it** — it asks first, and in a non-interactive context it simply skips.
+That produces a confusing loop: `apply` leaves the old lockfile in place,
+`:Lazy restore` then restores to *that* and writes it back, so the drift never
+clears. Break it with `--force`:
+
+```sh
+chezmoi apply --force ~/.config/nvim/lazy-lock.json
+nvim --headless "+Lazy! restore" +qa
+chezmoi status                      # should now be empty
+```
+
+**Pick one machine to bump plugin versions on.** Run `:Lazy sync` there,
+`chezmoi re-add` the lockfile, commit; then on the other machine pull and use
+the force-apply sequence above. Both machines updating independently just
+produces lockfile churn.
+
+Stray plugin directories from a previous config are removed with
+`:Lazy clean` — compare `ls ~/.local/share/nvim/lazy/ | wc -l` against
+`jq 'keys|length' ~/.config/nvim/lazy-lock.json`.
+
 ### Neovim first launch
 
 After `chezmoi apply` deploys the nvim config, the very first `nvim` launch will:
