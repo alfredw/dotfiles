@@ -24,6 +24,9 @@ alias gcm='git commit -m'
 alias gp='git push'
 alias gl='git pull'
 
+# Deployed by chezmoi alongside herdr's config.toml.
+alias herdrkeys='bat --language=md "${XDG_CONFIG_HOME:-$HOME/.config}/herdr/KEYBINDINGS.md"'
+
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'

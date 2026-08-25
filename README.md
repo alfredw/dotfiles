@@ -97,7 +97,9 @@ dot_config/git/
 dot_config/mise/config.toml     global runtime versions
 dot_config/starship.toml        prompt config
 dot_config/ghostty/config       terminal config
-dot_config/herdr/config.toml    multiplexer config (prefix, theme, keybinds)
+dot_config/herdr/
+  config.toml                   multiplexer config (prefix, theme, keybinds)
+  KEYBINDINGS.md                shortcut reference; read it with `herdrkeys`
 dot_config/private_k9s/         k9s config, aliases, plugins
 dot_config/private_karabiner/   karabiner-elements config
 dot_config/gh/                  gh CLI prefs (hosts.yml is ignored)
@@ -136,14 +138,27 @@ state, karabiner's dated backups, and herdr's logs, sockets and session file.
 
 ## Notes
 
-### herdr prefix
+### herdr keybindings
 
-`prefix = "ctrl+a"`, inherited from the old tmux binding. Note that the shared
-`keybinds.zsh` sets emacs keybindings (`bindkey -e`), where `ctrl+a` is
-`beginning-of-line` — inside a herdr pane, herdr takes it first. Change the
-prefix in `dot_config/herdr/config.toml` if that trade is not worth it.
+`prefix = "ctrl+b"`, herdr's default. `ctrl+a` was tried first to match the old
+tmux binding, but the shared `keybinds.zsh` sets emacs keybindings (`bindkey
+-e`) where `ctrl+a` is `beginning-of-line` — herdr would swallow it inside every
+pane. `ctrl+b` is not free either (it's `backward-char`), but it is the binding
+every herdr user lives with by default, and the arrow keys cover it.
 
-Apply config edits without restarting: `herdr server reload-config`.
+The full shortcut table lives in `dot_config/herdr/KEYBINDINGS.md`, which
+chezmoi deploys to `~/.config/herdr/KEYBINDINGS.md` so it is readable on every
+machine — run `herdrkeys`. It also records which bindings are ours versus
+upstream defaults, and why the prefix moved off `ctrl+a`.
+
+One thing worth knowing before you try to fix it in config: **bindings do not
+repeat.** The prefix is single-shot and herdr has no tmux `bind -r` equivalent,
+so stepping N workspaces costs N presses of `ctrl+b`. Requested upstream in
+[discussion #599](https://github.com/herdrdev/herdr/discussions/599), still
+open. Use the indexed jumps (`prefix+shift+1..9`) instead.
+
+Apply config edits without restarting: `herdr server reload-config`, or
+`prefix+shift+r`.
 
 ### If eza / bat / delta abort with "Library not loaded: libllhttp"
 

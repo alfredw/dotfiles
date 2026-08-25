@@ -77,6 +77,11 @@ last_pane = "prefix+a"
 #   prefix + shift+jk    -> move between WORKSPACES   (vertical, like the sidebar)
 #   prefix + shift+hl    -> move between AGENTS       (horizontal)
 # All four shift chords are unbound by default.
+#
+# These do NOT repeat: the prefix is single-shot, so stepping N workspaces costs
+# N presses of ctrl+b. There is no tmux `bind -r` equivalent and no `repeat`
+# field on a binding (herdrdev/herdr discussion #599 asks for one; still open).
+# Use the indexed jumps below instead. Full table in the repo README.
 next_workspace = "prefix+shift+j"
 previous_workspace = "prefix+shift+k"
 next_agent = "prefix+shift+l"
