@@ -235,3 +235,82 @@ euprod-kubectl() {
   HTTPS_PROXY="socks5://127.0.0.1:${EUPROD_BASTION_PORT}" \
     kubectl --context "gke_${EUPROD_CLUSTER_PROJECT}_${EUPROD_CLUSTER_REGION}_${EUPROD_CLUSTER_NAME}" "$@"
 }
+
+# --- PAI legacydev bastion + k9s helpers ------------------------------------
+# The OLD web-platform nonprod cluster (northamerica-northeast1), where the
+# web-platform `dev` namespace runs — distinct from the newer nonproddev env
+# above. Port 1080 matches the socks5 proxy_url in the legacy root
+# infrastructure/providers.tf. Values from infrastructure/README.md and the
+# live cluster (confirmed 2026-08-29).
+: ${LEGACYDEV_VPC_HOST_PROJECT:=vpc-host-nonprod-ra396-dg836}
+: ${LEGACYDEV_BASTION_VM:=nonprod-bastion-vm}
+: ${LEGACYDEV_BASTION_ZONE:=northamerica-northeast1-a}
+: ${LEGACYDEV_BASTION_PORT:=1080}
+: ${LEGACYDEV_CLUSTER_PROJECT:=nonprod-web-platform-svc-899np}
+: ${LEGACYDEV_CLUSTER_NAME:=nonprod-private-autopilot}
+: ${LEGACYDEV_CLUSTER_REGION:=northamerica-northeast1}
+
+legacydev-tunnel() {
+  if lsof -iTCP:${LEGACYDEV_BASTION_PORT} -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Tunnel already listening on :${LEGACYDEV_BASTION_PORT}"
+    return 0
+  fi
+  echo "Opening IAP tunnel to ${LEGACYDEV_BASTION_VM} on :${LEGACYDEV_BASTION_PORT}..."
+  # Detach stdin from terminal so the ssh -t pty doesn't get SIGTTIN/SIGTTOU
+  # when the process is backgrounded (otherwise it's stuck in T state and never binds).
+  nohup gcloud compute ssh "${LEGACYDEV_BASTION_VM}" \
+    --zone "${LEGACYDEV_BASTION_ZONE}" \
+    --tunnel-through-iap \
+    --project "${LEGACYDEV_VPC_HOST_PROJECT}" \
+    --ssh-flag="-D ${LEGACYDEV_BASTION_PORT}" \
+    --ssh-flag="-q" \
+    --ssh-flag="-N" \
+    --ssh-flag="-o ExitOnForwardFailure=yes" \
+    --ssh-flag="-o ServerAliveInterval=10" \
+    </dev/null >/tmp/legacydev-tunnel.log 2>&1 &
+  disown
+  echo "Tunnel PID: $! (log: /tmp/legacydev-tunnel.log)"
+  echo "Wait a few seconds, then verify: lsof -iTCP:${LEGACYDEV_BASTION_PORT} -sTCP:LISTEN -n -P"
+}
+
+legacydev-tunnel-kill() {
+  # NB: pattern must not also match nonproddev-bastion-vm (it doesn't:
+  # "nonprod-bastion-vm" is not a substring of "nonproddev-bastion-vm").
+  local pattern="${LEGACYDEV_BASTION_VM}"
+  if ! pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "No legacydev tunnel found"
+    return 0
+  fi
+  echo "Killing legacydev tunnel processes..."
+  pkill -f "$pattern"
+  sleep 1
+  if pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "Some processes survived SIGTERM — sending SIGKILL..."
+    pkill -9 -f "$pattern"
+  fi
+}
+
+legacydev-kubeconfig() {
+  gcloud container clusters get-credentials "${LEGACYDEV_CLUSTER_NAME}" \
+    --region "${LEGACYDEV_CLUSTER_REGION}" \
+    --project "${LEGACYDEV_CLUSTER_PROJECT}"
+}
+
+_legacydev-ensure-tunnel() {
+  if ! lsof -iTCP:${LEGACYDEV_BASTION_PORT} -sTCP:LISTEN -n -P >/dev/null 2>&1; then
+    echo "No tunnel listening on :${LEGACYDEV_BASTION_PORT} — run 'legacydev-tunnel' first" >&2
+    return 1
+  fi
+}
+
+legacydev-k9s() {
+  _legacydev-ensure-tunnel || return 1
+  HTTPS_PROXY="socks5://127.0.0.1:${LEGACYDEV_BASTION_PORT}" \
+    k9s --context "gke_${LEGACYDEV_CLUSTER_PROJECT}_${LEGACYDEV_CLUSTER_REGION}_${LEGACYDEV_CLUSTER_NAME}"
+}
+
+legacydev-kubectl() {
+  _legacydev-ensure-tunnel || return 1
+  HTTPS_PROXY="socks5://127.0.0.1:${LEGACYDEV_BASTION_PORT}" \
+    kubectl --context "gke_${LEGACYDEV_CLUSTER_PROJECT}_${LEGACYDEV_CLUSTER_REGION}_${LEGACYDEV_CLUSTER_NAME}" "$@"
+}
