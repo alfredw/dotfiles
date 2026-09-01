@@ -23,6 +23,7 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.lang.python" },
     { import = "lazyvim.plugins.extras.lang.typescript" },
     { import = "lazyvim.plugins.extras.lang.rust" },
+    { import = "lazyvim.plugins.extras.lang.elixir" },
 
     -- Infra and config languages. Driven by actual usage rather than taste:
     -- ~/dev/work/pai/infrastructure alone holds 24 .tf and 3,343 YAML files,
