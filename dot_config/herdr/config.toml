@@ -1,6 +1,6 @@
 # herdr — terminal workspace manager for AI coding agents
 #
-# Managed in ~/dotfiles (GNU Stow package: herdr).
+# Managed by chezmoi from ~/work/personal/dotfiles (dot_config/herdr/).
 # Reference:  https://herdr.dev/docs/configuration/
 # Annotated defaults:  herdr --default-config
 # Apply edits live:    herdr server reload-config   (or prefix+shift+r)
@@ -60,16 +60,17 @@ directory = "~/dev/worktrees"
 # Keybindings
 # ─────────────────────────────────────────────────────────────────────────────
 [keys]
-# herdr's default. ctrl+a was tried first to match the old tmux prefix, but the
-# shared keybinds.zsh sets `bindkey -e`, and under emacs bindings ctrl+a is
-# beginning-of-line — herdr would swallow it inside every pane.
+# Same prefix as the old tmux setup. Safe because keybinds.zsh runs `bindkey -v`:
+# in zsh's vi keymaps ctrl+a is unbound, so nothing in the shell loses a key.
+# (An earlier emacs-mode config made ctrl+a beginning-of-line, which is why
+# this briefly sat on herdr's default ctrl+b.)
 #
-# ctrl+b is not free either (it's backward-char), but it's the binding every
-# herdr user lives with by default, and the arrow keys cover it.
-prefix = "ctrl+b"
+# Known casualties inside panes: nvim's ctrl+a (increment number) and the
+# home-of-line ctrl+a in agent prompts such as Claude Code. Home/0 cover both.
+prefix = "ctrl+a"
 
-# Bounce between the two panes you're actually working in. 'a' is unclaimed by
-# any default; prefix+b would collide with toggle_sidebar.
+# Bounce between the two panes you're actually working in, tmux-style
+# prefix+prefix. 'a' is unclaimed by any default.
 last_pane = "prefix+a"
 
 # Movement scheme:
@@ -79,7 +80,7 @@ last_pane = "prefix+a"
 # All four shift chords are unbound by default.
 #
 # These do NOT repeat: the prefix is single-shot, so stepping N workspaces costs
-# N presses of ctrl+b. There is no tmux `bind -r` equivalent and no `repeat`
+# N presses of ctrl+a. There is no tmux `bind -r` equivalent and no `repeat`
 # field on a binding (herdrdev/herdr discussion #599 asks for one; still open).
 # Use the indexed jumps below instead. Full table in the repo README.
 next_workspace = "prefix+shift+j"
