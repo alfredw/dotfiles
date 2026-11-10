@@ -13,3 +13,8 @@ path=("$HOME/.local/bin" "/opt/homebrew/bin" $path)
 # Let gcloud reuse the system Python's site-packages (faster startup).
 # https://cloud.google.com/sdk/docs/configuration#cloudsdk_python_sitepackages
 export CLOUDSDK_PYTHON_SITEPACKAGES=1
+
+# Pin gcloud's interpreter: without this it takes the first `python3` on PATH,
+# which falls back to the Command Line Tools' Python 3.9 (too old for gcloud).
+# The opt/ path survives patch upgrades of python@3.14.
+export CLOUDSDK_PYTHON=/opt/homebrew/opt/python@3.14/bin/python3.14

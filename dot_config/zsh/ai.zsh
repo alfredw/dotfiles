@@ -2,7 +2,7 @@
 
 alias c='claude'
 alias cc='claude --continue'
-alias cr='claude --resume'
+alias cre='claude --resume'
 alias dopus='claude --model opus --dangerously-skip-permissions'
 alias cczf='claude --plugin-dir ../cc-marketplace/kzf --plugin-dir ../cc-marketplace/standards'
 
