@@ -30,3 +30,7 @@ alias herdrkeys='bat --language=md "${XDG_CONFIG_HOME:-$HOME/.config}/herdr/KEYB
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
+
+# nerv-hub, one hub folder per Nerv server (keys are shared in ~/.config/nerv-hub)
+alias hub-pai='NERV_HUB_DIR=~/.nerv-hub-proposalai NERV_URL=https://nerv.proposalai.co nerv-hub'
+alias hub-tracker='NERV_HUB_DIR=~/.nerv-hub-tracker NERV_URL=https://nerv-tracker.tail2a0b6c.ts.net nerv-hub'
